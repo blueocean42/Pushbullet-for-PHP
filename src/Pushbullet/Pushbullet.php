@@ -65,7 +65,7 @@ class Pushbullet
      *
      * @param string $iden Iden of push notification.
      * @return Push Push notification object.
-     * 
+     *
      * @throws Exceptions\ConnectionException
      * @throws Exceptions\NotFoundException If there's no push notification with the specified iden
      */
@@ -228,6 +228,87 @@ class Pushbullet
         }
 
         throw new Exceptions\NotFoundException("Contact not found.");
+    }
+
+    /**
+     * Create a new chat.
+     *
+     * @param string $email Email address.
+     *
+     * @return Chat The newly created chat.
+     * @throws Exceptions\ConnectionException
+     * @throws Exceptions\InvalidRecipientException Thrown if the email address is invalid.
+     * @throws Exceptions\InvalidTokenException
+     */
+    public function createChat($email)
+    {
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            throw new Exceptions\InvalidRecipientException(sprintf('Invalid "%s" email address.', $email));
+        }
+
+        $data = [
+            'email' => $email
+        ];
+
+        return new Chat(
+            Connection::sendCurlRequest(Connection::URL_CHATS, 'POST', $data, true, $this->apiKey),
+            $this->apiKey
+        );
+    }
+
+    /**
+     * Get a list of chats.
+     *
+     * @param string $cursor        Request the next page via its cursor from a previous response. See the API
+     *                              documentation (https://docs.pushbullet.com/http/) for a detailed description.
+     * @param int    $limit         Maximum number of objects on each page.
+     *
+     * @return Chat[] Chats.
+     * @throws Exceptions\ConnectionException
+     * @throws Exceptions\InvalidTokenException
+     */
+    public function getChats($cursor = null, $limit = null)
+    {
+        $data = self::initData(0, $cursor, $limit);
+
+        $chats = Connection::sendCurlRequest(Connection::URL_CHATS, 'GET', $data, false, $this->apiKey)->chats;
+
+        $objContacts = [];
+
+        foreach ($chats as $c) {
+            if (!empty($c->active)) {
+                $objContacts[] = new Chat($c, $this->apiKey);
+            }
+        }
+
+        $this->chats = $objContacts;
+
+        return $objContacts;
+    }
+
+    /**
+     * Target a chat by its email.
+     *
+     * @param string $email email of the chat.
+     *
+     * @return Chat The chat.
+     * @throws Exceptions\ConnectionException
+     * @throws Exceptions\InvalidTokenException
+     * @throws Exceptions\NotFoundException
+     */
+    public function chat($email)
+    {
+        if ($this->chats === null) {
+            $this->getChats();
+        }
+
+        foreach ($this->chats as $c) {
+            if ($c->with->email === $email) {
+                return $c;
+            }
+        }
+
+        throw new Exceptions\NotFoundException("Chat not found.");
     }
 
     /**

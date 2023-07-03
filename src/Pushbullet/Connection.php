@@ -11,6 +11,7 @@ class Connection
 {
     const URL_PUSHES         = 'https://api.pushbullet.com/v2/pushes';
     const URL_DEVICES        = 'https://api.pushbullet.com/v2/devices';
+    const URL_CHATS          = 'https://api.pushbullet.com/v2/chats';
     const URL_CONTACTS       = 'https://api.pushbullet.com/v2/contacts';
     const URL_UPLOAD_REQUEST = 'https://api.pushbullet.com/v2/upload-request';
     const URL_USERS          = 'https://api.pushbullet.com/v2/users';
